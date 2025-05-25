@@ -26,14 +26,14 @@ module Api
       end
 
       def redis_connected?
-        Redis.new(url: ENV.fetch('REDIS_URL', 'redis://redis:6379/0')).ping == 'PONG'
+        Redis.new(url: ENV.fetch('REDIS_URL', 'redis://localhost:6379/0')).ping == 'PONG'
       rescue StandardError
         false
       end
 
       def sidekiq_connected?
-        ps = Sidekiq::ProcessSet.new
-        !ps.empty?
+        return false unless redis_connected?
+        `ps aux | grep -i [s]idekiq`.present?
       rescue StandardError
         false
       end

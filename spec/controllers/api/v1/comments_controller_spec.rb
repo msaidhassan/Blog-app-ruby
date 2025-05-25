@@ -10,6 +10,18 @@ RSpec.describe Api::V1::CommentsController, type: :controller do
     request.headers['Authorization'] = "Bearer #{token}"
   end
 
+  describe 'GET #index' do
+    before { create_list(:comment, 3, post: post_record, user: user) }
+
+    it 'returns all comments for a post' do
+      get :index, params: { post_id: post_record.id }
+      
+      expect(response).to have_http_status(:ok)
+      json_response = JSON.parse(response.body)
+      expect(json_response.length).to eq(3)
+    end
+  end
+
   describe 'POST #create' do
     let(:valid_attributes) do
       { comment: { body: 'Test comment' } }
@@ -22,19 +34,27 @@ RSpec.describe Api::V1::CommentsController, type: :controller do
         }.to change(Comment, :count).by(1)
         
         expect(response).to have_http_status(:created)
-        comment = JSON.parse(response.body)
-        expect(comment['body']).to eq('Test comment')
-        expect(comment['user']['id']).to eq(user.id)
+        json_response = JSON.parse(response.body)
+        expect(json_response['body']).to eq('Test comment')
+        expect(json_response['user']['id']).to eq(user.id)
       end
     end
 
     context 'with invalid parameters' do
-      it 'does not create a comment' do
+      it 'does not create comment without body' do
         expect {
           post :create, params: { post_id: post_record.id, comment: { body: '' } }
         }.not_to change(Comment, :count)
         
         expect(response).to have_http_status(:unprocessable_entity)
+      end
+
+      it 'returns 404 for non-existent post' do
+        expect {
+          post :create, params: { post_id: -1, **valid_attributes }
+        }.not_to change(Comment, :count)
+        
+        expect(response).to have_http_status(:not_found)
       end
     end
   end
@@ -58,13 +78,16 @@ RSpec.describe Api::V1::CommentsController, type: :controller do
 
       it 'does not update the comment' do
         put :update, params: { post_id: post_record.id, id: other_comment.id, **new_attributes }
+        
         expect(response).to have_http_status(:forbidden)
+        expect(JSON.parse(response.body)['error']).to eq('Unauthorized to perform this action')
       end
     end
 
     context 'with invalid parameters' do
-      it 'does not update the comment' do
+      it 'does not update with empty body' do
         put :update, params: { post_id: post_record.id, id: comment.id, comment: { body: '' } }
+        
         expect(response).to have_http_status(:unprocessable_entity)
       end
     end
@@ -78,7 +101,9 @@ RSpec.describe Api::V1::CommentsController, type: :controller do
         expect {
           delete :destroy, params: { post_id: post_record.id, id: comment.id }
         }.to change(Comment, :count).by(-1)
-        expect(response).to have_http_status(:no_content)
+        
+        expect(response).to have_http_status(:ok)
+        expect(JSON.parse(response.body)['message']).to eq('Comment deleted successfully')
       end
     end
 
@@ -89,7 +114,21 @@ RSpec.describe Api::V1::CommentsController, type: :controller do
         expect {
           delete :destroy, params: { post_id: post_record.id, id: other_comment.id }
         }.not_to change(Comment, :count)
+        
         expect(response).to have_http_status(:forbidden)
+        expect(JSON.parse(response.body)['error']).to eq('Unauthorized to perform this action')
+      end
+    end
+
+    context 'with non-existent resources' do
+      it 'returns 404 for non-existent post' do
+        delete :destroy, params: { post_id: -1, id: 1 }
+        expect(response).to have_http_status(:not_found)
+      end
+
+      it 'returns 404 for non-existent comment' do
+        delete :destroy, params: { post_id: post_record.id, id: -1 }
+        expect(response).to have_http_status(:not_found)
       end
     end
   end

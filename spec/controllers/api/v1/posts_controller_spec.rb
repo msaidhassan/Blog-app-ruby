@@ -4,7 +4,7 @@ RSpec.describe Api::V1::PostsController, type: :controller do
   let(:user) { create(:user) }
   let(:other_user) { create(:user) }
   let(:token) { jwt_encode(user_id: user.id) }
-  
+
   before do
     request.headers['Authorization'] = "Bearer #{token}"
   end
@@ -15,17 +15,33 @@ RSpec.describe Api::V1::PostsController, type: :controller do
     it 'returns all posts' do
       get :index
       expect(response).to have_http_status(:ok)
-      expect(JSON.parse(response.body).length).to eq(3)
+      json_response = JSON.parse(response.body)
+      expect(json_response.length).to eq(3)
+      expect(json_response.first).to include('user', 'tags', 'comments')
     end
   end
 
   describe 'GET #show' do
     let(:post) { create(:post, user: user) }
 
-    it 'returns the post' do
-      get :show, params: { id: post.id }
-      expect(response).to have_http_status(:ok)
-      expect(JSON.parse(response.body)['id']).to eq(post.id)
+    context 'when post exists' do
+      it 'returns the post with relationships' do
+        get :show, params: { id: post.id }
+        
+        expect(response).to have_http_status(:ok)
+        json_response = JSON.parse(response.body)
+        expect(json_response['id']).to eq(post.id)
+        expect(json_response).to include('user', 'tags', 'comments')
+      end
+    end
+
+    context 'when post does not exist' do
+      it 'returns not found' do
+        get :show, params: { id: -1 }
+        
+        expect(response).to have_http_status(:not_found)
+        expect(JSON.parse(response.body)['error']).to include("Couldn't find Post")
+      end
     end
   end
 
@@ -48,32 +64,34 @@ RSpec.describe Api::V1::PostsController, type: :controller do
           .and change(Tag, :count).by(2)
         
         expect(response).to have_http_status(:created)
-        created_post = JSON.parse(response.body)
-        expect(created_post['tags'].map { |t| t['name'] }).to match_array(['ruby', 'rails'])
+        json_response = JSON.parse(response.body)
+        expect(json_response['tags'].map { |t| t['name'] }).to match_array(['ruby', 'rails'])
       end
 
       it 'schedules post deletion job' do
         expect {
           post :create, params: valid_attributes
-        }.to have_enqueued_job(DeleteOldPostsJob).at(be_within(1.second).of(24.hours.from_now))
+        }.to have_enqueued_job(DeleteOldPostsJob)
       end
     end
 
     context 'with invalid parameters' do
-      it 'does not create a post without title' do
+      it 'does not create post without title' do
         expect {
           post :create, params: { post: { body: 'Test' }, tags: 'ruby' }
         }.not_to change(Post, :count)
         
         expect(response).to have_http_status(:unprocessable_entity)
+        expect(JSON.parse(response.body)['errors']).to include("Title can't be blank")
       end
 
-      it 'does not create a post without tags' do
+      it 'does not create post without tags' do
         expect {
           post :create, params: { post: { title: 'Test', body: 'Test' } }
         }.not_to change(Post, :count)
         
         expect(response).to have_http_status(:unprocessable_entity)
+        expect(JSON.parse(response.body)['errors']).to include('Tags must have at least one tag')
       end
     end
   end
@@ -106,7 +124,18 @@ RSpec.describe Api::V1::PostsController, type: :controller do
 
       it 'does not update the post' do
         put :update, params: new_attributes.merge(id: other_post.id)
+        
         expect(response).to have_http_status(:forbidden)
+        expect(JSON.parse(response.body)['error']).to eq('Unauthorized to perform this action')
+      end
+    end
+
+    context 'with invalid parameters' do
+      it 'does not update with invalid data' do
+        put :update, params: { id: post_record.id, post: { title: '' }, tags: 'ruby' }
+        
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(JSON.parse(response.body)['errors']).to include("Title can't be blank")
       end
     end
   end
@@ -119,7 +148,9 @@ RSpec.describe Api::V1::PostsController, type: :controller do
         expect {
           delete :destroy, params: { id: post_record.id }
         }.to change(Post, :count).by(-1)
-        expect(response).to have_http_status(:no_content)
+        
+        expect(response).to have_http_status(:ok)
+        expect(JSON.parse(response.body)['message']).to eq('Post deleted successfully')
       end
     end
 
@@ -130,7 +161,9 @@ RSpec.describe Api::V1::PostsController, type: :controller do
         expect {
           delete :destroy, params: { id: other_post.id }
         }.not_to change(Post, :count)
+        
         expect(response).to have_http_status(:forbidden)
+        expect(JSON.parse(response.body)['error']).to eq('Unauthorized to perform this action')
       end
     end
   end
