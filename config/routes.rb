@@ -11,25 +11,23 @@ Rails.application.routes.draw do
   mount Sidekiq::Web => '/sidekiq', constraints: AdminConstraint.new
 
   namespace :api do
-    namespace :v1 do
-      # Health check
-      get 'health/check', to: 'health#check'
+    # Health check
+    get 'health/check', to: 'health#check'
 
-      # Authentication routes
-      post '/login', to: 'authentication#login'
-      post '/register', to: 'authentication#register'
-      post '/logout', to: 'authentication#logout'
-      patch '/update_image', to: 'authentication#update_image'
-      get '/users/:id/image', to: 'authentication#serve_image'
+    # Authentication routes
+    post '/login', to: 'authentication#login'
+    post '/register', to: 'authentication#register'
+    post '/logout', to: 'authentication#logout'
+    patch '/update_image', to: 'authentication#update_image'
+    get '/users/:id/image', to: 'authentication#serve_image'
 
-      # Posts routes with nested comments
-      resources :posts do
-        resources :comments, only: [:index, :create, :update, :destroy]
-      end
-
-      # Tags routes
-      resources :tags
+    # Posts routes with nested comments
+    resources :posts do
+      resources :comments, only: [:index, :create, :update, :destroy]
     end
+
+    # Tags routes
+    resources :tags
   end
 
   # Defines the root path route ("/")
