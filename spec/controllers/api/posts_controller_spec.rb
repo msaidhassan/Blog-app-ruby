@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-RSpec.describe Api::V1::PostsController, type: :controller do
+RSpec.describe Api::PostsController, type: :controller do
   let(:user) { create(:user) }
   let(:other_user) { create(:user) }
   let(:token) { jwt_encode(user_id: user.id) }

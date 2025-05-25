@@ -29,26 +29,34 @@ A Ruby on Rails-based RESTful API for a blog application with user authenticatio
 ## API Endpoints
 
 ### Authentication
-- POST `/api/v1/register` - Register a new user
-- POST `/api/v1/login` - Login and receive JWT token
+- POST `/api/register` - Register a new user
+- POST `/api/login` - Login and receive JWT token
+- POST `/api/logout` - Logout current user
+- PATCH `/api/update_image` - Update user profile image
+- GET `/api/users/:id/image` - Get user profile image
 
 ### Posts
-- GET `/api/v1/posts` - List all posts
-- GET `/api/v1/posts/:id` - Get a specific post
-- POST `/api/v1/posts` - Create a new post
-- PUT `/api/v1/posts/:id` - Update a post
-- DELETE `/api/v1/posts/:id` - Delete a post
+- GET `/api/posts` - List all posts
+- GET `/api/posts/:id` - Get a specific post
+- POST `/api/posts` - Create a new post
+- PUT `/api/posts/:id` - Update a post
+- DELETE `/api/posts/:id` - Delete a post
 
 ### Comments
-- POST `/api/v1/posts/:post_id/comments` - Create a comment
-- PUT `/api/v1/posts/:post_id/comments/:id` - Update a comment
-- DELETE `/api/v1/posts/:post_id/comments/:id` - Delete a comment
+- GET `/api/posts/:post_id/comments` - List all comments for a post
+- POST `/api/posts/:post_id/comments` - Create a comment
+- PUT `/api/posts/:post_id/comments/:id` - Update a comment
+- DELETE `/api/posts/:post_id/comments/:id` - Delete a comment
 
 ### Tags
-- GET `/api/v1/tags` - List all tags
-- POST `/api/v1/tags` - Create a new tag
-- PUT `/api/v1/tags/:id` - Update a tag
-- DELETE `/api/v1/tags/:id` - Delete a tag
+- GET `/api/tags` - List all tags
+- GET `/api/tags/:id` - Get a specific tag
+- POST `/api/tags` - Create a new tag
+- PUT `/api/tags/:id` - Update a tag
+- DELETE `/api/tags/:id` - Delete a tag
+
+### Health Check
+- GET `/api/health/check` - Check API health status
 
 ## Authentication
 

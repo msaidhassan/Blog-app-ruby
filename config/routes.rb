@@ -29,7 +29,4 @@ Rails.application.routes.draw do
     # Tags routes
     resources :tags
   end
-
-  # Defines the root path route ("/")
-  # root "posts#index"
 end

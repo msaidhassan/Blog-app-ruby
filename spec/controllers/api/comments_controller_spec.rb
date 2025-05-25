@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-RSpec.describe Api::V1::CommentsController, type: :controller do
+RSpec.describe Api::CommentsController, type: :controller do
   let(:user) { create(:user) }
   let(:other_user) { create(:user) }
   let(:post_record) { create(:post, user: user) }
