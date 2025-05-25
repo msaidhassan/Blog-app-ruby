@@ -20,22 +20,31 @@ Rails.application.configure do
   # Configure public file server for tests with cache-control for performance.
   config.public_file_server.enabled = true
   config.public_file_server.headers = {
-    "Cache-Control" => "public, max-age=#{1.hour.to_i}"
+    'Cache-Control' => "public, max-age=#{1.hour.to_i}"
   }
 
   # Show full error reports.
   config.consider_all_requests_local = true
+  
+  # Use memory store for caching in test environment
+  config.cache_store = :memory_store
   config.action_controller.perform_caching = false
-  config.cache_store = :null_store
+
+  # Configure Active Storage to use local test service
+  config.active_storage.service = :test
+  config.active_storage.track_variants = true
+  
+  # Configure Active Job to use test adapter
+  config.active_job.queue_adapter = :test
+
+  # Use Sidekiq in test mode
+  config.active_job.queue_adapter = :test
 
   # Render exception templates for rescuable exceptions and raise for other exceptions.
   config.action_dispatch.show_exceptions = :none
 
   # Disable request forgery protection in test environment.
   config.action_controller.allow_forgery_protection = false
-
-  # Store uploaded files on the local file system in a temporary directory.
-  config.active_storage.service = :test
 
   # Tell Action Mailer not to deliver emails to the real world.
   # The :test delivery method accumulates sent emails in the

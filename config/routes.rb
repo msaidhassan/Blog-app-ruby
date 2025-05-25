@@ -24,7 +24,7 @@ Rails.application.routes.draw do
 
       # Posts routes with nested comments
       resources :posts do
-        resources :comments, only: [:create, :update, :destroy]
+        resources :comments, only: [:index, :create, :update, :destroy]
       end
 
       # Tags routes

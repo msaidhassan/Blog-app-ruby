@@ -3,7 +3,7 @@ require_relative '../../../../lib/json_web_token'
 module Api
   module V1
     class AuthenticationController < ApplicationController
-      skip_before_action :authenticate_request, only: [:login, :register]
+      skip_before_action :authenticate_request, only: [:login, :register, :serve_image]
       
       # POST /api/v1/login
       def login
@@ -11,13 +11,16 @@ module Api
         if @user&.authenticate(params[:password])
           token = JsonWebToken.encode(user_id: @user.id)
           time = Time.now + 24.hours.to_i
-          render json: { token: token, exp: time.strftime("%m-%d-%Y %H:%M"),
-                         user: @user.as_json }, status: :ok
+          render json: { 
+            token: token, 
+            exp: time.strftime("%m-%d-%Y %H:%M"),
+            user: @user.as_json(except: :password_digest) 
+          }, status: :ok
         else
           render json: { error: 'unauthorized' }, status: :unauthorized
         end
       end
-      
+
       # POST /api/v1/register
       def register
         @user = User.new(user_params.except(:image))
@@ -33,44 +36,47 @@ module Api
           render json: { 
             token: token, 
             exp: time.strftime("%m-%d-%Y %H:%M"),
-            user: @user.as_json 
+            user: @user.as_json(except: :password_digest) 
           }, status: :created
         else
           render json: { errors: @user.errors.full_messages }, status: :unprocessable_entity
         end
-        
       end
 
-      # POST /api/v1/logout
-      def logout
-        render json: { message: 'Successfully logged out' }, status: :ok
-      end
-      
       # PATCH /api/v1/update_image
       def update_image
-        if params[:image].blank?
+        unless params[:image].present?
           render json: { error: 'Image must be add' }, status: :unprocessable_entity
           return
         end
 
-        @current_user.image.attach(params[:image])
-        if @current_user.valid?
-          render json: { message: 'Image updated successfully', user: @current_user }, status: :ok
-        else
-          render json: { error: @current_user.errors[:image].first }, status: :unprocessable_entity
+        unless params[:image].content_type.in?(%w[image/jpeg image/png image/gif])
+          render json: { error: 'Image must be a JPEG, PNG, or GIF' }, status: :unprocessable_entity
+          return
         end
+
+        @current_user.image.attach(params[:image])
+        render json: { message: 'Image updated successfully' }
       end
 
       # GET /api/v1/users/:id/image
       def serve_image
         user = User.find(params[:id])
+        
         if user.image.attached?
           redirect_to rails_blob_url(user.image)
         else
           render json: { error: 'No image attached' }, status: :not_found
         end
+      rescue ActiveRecord::RecordNotFound
+        render json: { error: 'User not found' }, status: :not_found
       end
-      
+
+      # POST /api/v1/logout
+      def logout
+        render json: { message: 'Successfully logged out' }
+      end
+
       private
       
       def user_params

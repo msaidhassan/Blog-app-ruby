@@ -32,16 +32,13 @@ development:
   <<: *default
   database: blog_app_development
 
-# test:
-#   <<: *default
-#   database: blog_app_test
+test:
+  <<: *default
+  database: blog_app_test
 
 production:
   <<: *default
   database: blog_app_production
-  username: <%= ENV["DATABASE_USERNAME"] %>
-  password: <%= ENV["DATABASE_PASSWORD"] %>
-  # Increase pool size in production
-  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 10 } %>
-  # Use prepared statements for better performance
-  prepared_statements: true
+  username: <%= ENV["BLOG_APP_DATABASE_USERNAME"] %>
+  password: <%= ENV["BLOG_APP_DATABASE_PASSWORD"] %>
+  url: <%= ENV["DATABASE_URL"] %>
