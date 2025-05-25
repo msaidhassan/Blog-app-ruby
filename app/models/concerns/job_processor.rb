@@ -4,7 +4,6 @@ module JobProcessor
   included do
     before_perform :track_start
     after_perform :track_success
-    after_retry :track_retry
     
     private
 
@@ -18,9 +17,6 @@ module JobProcessor
       Rails.cache.increment("jobs:#{self.class.name}:completed")
     end
 
-    def track_retry
-      Rails.logger.warn("Retrying job #{self.class.name}")
-      Rails.cache.increment("jobs:#{self.class.name}:retried")
-    end
+    
   end
 end

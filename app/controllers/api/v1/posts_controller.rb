@@ -18,14 +18,13 @@ module Api
         tag_names = params[:tags]&.split(',')&.map(&:strip) || []
         
         ActiveRecord::Base.transaction do
+          # Create or find tags first
+          tags = tag_names.map { |name| Tag.find_or_create_by!(name: name.downcase) }
+          @post.tags = tags  # Assign tags before saving
+
           if @post.save
-            tag_names.each do |name|
-              tag = Tag.find_or_create_by!(name: name.downcase)
-              @post.tags << tag
-            end
-            
             # Schedule post deletion after 24 hours
-            DeleteOldPostsJob.set(wait: 24.hours).perform_later(@post.id)
+            DeleteOldPostsJob.set(wait: 24.seconds).perform_later(@post.id)
             render json: @post, include: [:tags], status: :created
           else
             render json: { errors: @post.errors.full_messages }, status: :unprocessable_entity
@@ -58,7 +57,7 @@ module Api
 
       def destroy
         @post.destroy
-        head :no_content
+        render json: { message: 'Post deleted successfully' }, status: :ok
       end
 
       private
@@ -68,7 +67,9 @@ module Api
       end
 
       def post_params
-        params.require(:post).permit(:title, :body)
+        # If params[:post] exists, use it, otherwise use the root params
+        parameters = params[:post].present? ? params.require(:post) : params
+        parameters.permit(:title, :body)
       end
 
       def authorize_user

@@ -3,7 +3,7 @@ require_relative '../../../../lib/json_web_token'
 module Api
   module V1
     class AuthenticationController < ApplicationController
-      skip_before_action :authenticate_request, only: [:login, :register, :serve_image]
+      skip_before_action :authenticate_request, only: [:login, :register]
       
       # POST /api/v1/login
       def login
@@ -20,15 +20,25 @@ module Api
       
       # POST /api/v1/register
       def register
-        @user = User.new(user_params)
+        @user = User.new(user_params.except(:image))
+        
+        # Attach image before saving
+        if params[:image].present?
+          @user.image.attach(params[:image])
+        end
+        
         if @user.save
           token = JsonWebToken.encode(user_id: @user.id)
           time = Time.now + 24.hours.to_i
-          render json: { token: token, exp: time.strftime("%m-%d-%Y %H:%M"),
-                         user: @user.as_json }, status: :created
+          render json: { 
+            token: token, 
+            exp: time.strftime("%m-%d-%Y %H:%M"),
+            user: @user.as_json 
+          }, status: :created
         else
           render json: { errors: @user.errors.full_messages }, status: :unprocessable_entity
         end
+        
       end
 
       # POST /api/v1/logout
@@ -38,11 +48,16 @@ module Api
       
       # PATCH /api/v1/update_image
       def update_image
-        if params[:image].present?
-          @current_user.image.attach(params[:image])
+        if params[:image].blank?
+          render json: { error: 'Image must be add' }, status: :unprocessable_entity
+          return
+        end
+
+        @current_user.image.attach(params[:image])
+        if @current_user.valid?
           render json: { message: 'Image updated successfully', user: @current_user }, status: :ok
         else
-          render json: { error: 'No image provided' }, status: :unprocessable_entity
+          render json: { error: @current_user.errors[:image].first }, status: :unprocessable_entity
         end
       end
 
@@ -57,8 +72,6 @@ module Api
       end
       
       private
-      
-    
       
       def user_params
         params.permit(:name, :email, :password, :image)

@@ -31,7 +31,7 @@ module Api
 
       def destroy
         @comment.destroy
-        head :no_content
+        render json: { message: 'Comment deleted successfully' }, status: :ok
       end
 
       private
@@ -45,7 +45,7 @@ module Api
       end
 
       def comment_params
-        params.require(:comment).permit(:body)
+        params.permit(:body)
       end
 
       def authorize_user

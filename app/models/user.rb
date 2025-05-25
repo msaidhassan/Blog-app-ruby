@@ -8,7 +8,7 @@ class User < ApplicationRecord
   validates :email, presence: true, uniqueness: true,
             format: { with: URI::MailTo::EMAIL_REGEXP }
   validates :password, presence: true, length: { minimum: 6 }, on: :create
-  validate :correct_image_type
+  validate :correct_image_type  
 
   def admin?
     admin
@@ -29,7 +29,7 @@ class User < ApplicationRecord
 
   def correct_image_type
     if image.attached? && !image.content_type.in?(%w[image/jpeg image/png image/gif])
-      errors.add(:image, 'must be a JPEG, PNG, or GIF')
+      errors.add(:image, ' Image must be a JPEG, PNG, or GIF')
     end
   end
 end
