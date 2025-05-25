@@ -95,6 +95,7 @@ RSpec.describe Api::TagsController, type: :controller do
       context 'with unused tag' do
         it 'deletes the tag' do
           request.headers['Authorization'] = "Bearer #{generate_token(admin)}"
+          puts "Tag posts count before deletion: #{tag.posts.count}" # Debug output
           expect {
             delete :destroy, params: { id: tag.id }
           }.to change(Tag, :count).by(-1)
