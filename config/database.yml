@@ -24,10 +24,11 @@ default: &default
   reconnect: true
   retry_limit: 3
   # Host configuration
-  host: <%= ENV.fetch("DATABASE_HOST") { "localhost" } %>
+  host: <%= ENV.fetch("DATABASE_HOST") { "db" } %>
   username: <%= ENV.fetch("DATABASE_USERNAME") { "postgres" } %>
   password: <%= ENV.fetch("DATABASE_PASSWORD") { "password" } %>
-  port: 5433
+  port: <%= ENV.fetch("DATABASE_PORT") { 5432 } %>
+
 development:
   <<: *default
   database: blog_app_development

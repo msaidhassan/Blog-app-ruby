@@ -1,0 +1,24 @@
+#!/bin/bash
+set -e
+
+# Remove server.pid
+rm -f /app/tmp/pids/server.pid
+
+# Wait for PostgreSQL
+until nc -z -v -w30 db 5432; do
+  echo 'Waiting for PostgreSQL...'
+  sleep 1
+done
+echo 'PostgreSQL is ready!'
+
+# Run DB setup (migrations + seeds)
+echo "Running database migrations..."
+bundle exec rails db:prepare
+
+if [ "$RAILS_ENV" = "development" ]; then
+  echo "Seeding database..."
+  bundle exec rails db:seed
+fi
+
+# Start Rails server
+exec "$@"

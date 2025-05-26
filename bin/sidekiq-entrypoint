@@ -1,0 +1,12 @@
+#!/bin/bash
+set -e
+
+# Wait for PostgreSQL (but skip migrations)
+until nc -z -v -w30 db 5432; do
+  echo 'Waiting for PostgreSQL...'
+  sleep 1
+done
+echo 'PostgreSQL is ready!'
+
+# Start Sidekiq
+exec "$@"

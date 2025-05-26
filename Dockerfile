@@ -19,6 +19,7 @@ RUN apt-get update -qq && apt-get install -y \
     netcat-traditional \
     imagemagick \
     libvips \
+    libyaml-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
@@ -35,8 +36,8 @@ COPY . .
 RUN mkdir -p tmp/storage
 
 # Add a script to be executed every time the container starts
-COPY bin/docker-entrypoint /usr/bin/
-RUN chmod +x /usr/bin/docker-entrypoint
+COPY bin/web-entrypoint bin/sidekiq-entrypoint /usr/bin/
+RUN chmod +x /usr/bin/web-entrypoint /usr/bin/sidekiq-entrypoint
 ENTRYPOINT ["docker-entrypoint"]
 
 # Configure the main process to run when running the image
